@@ -13,8 +13,7 @@ class Manager:
         self.log_path = os.path.join(self.shared_path, f"{self.server_name}.txt")
     
     def start(self):
-        print("test")
-        print("Start from inside forked process!")
         with open(self.log_path, "w+") as fp:
-            fp.write(f"Socket path: {self.sock_path}")
+            fp.write("Process forked and started the manager successfully!\n")
+            fp.write(f"Socket path: {self.sock_path}, PID: {os.getpid()}\n")
             fp.close()
