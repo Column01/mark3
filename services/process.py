@@ -5,6 +5,7 @@ import collections
 
 
 class ProcessProtocol(SubprocessProtocol):
+    """ Process Protocol that handles server process I/O """
     def __init__(self, exit_future):
         # Exit callback
         self.exit_future = exit_future

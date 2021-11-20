@@ -1,6 +1,12 @@
 class Service:
-    def __init__(self, instance):
-        self.instance = instance
+    def __init__(self, event_registry):
+        # Reference to the event registry
+        self.event_registry = event_registry
+        # Reference to register an event callback
+        self.register = self.event_registry.register
 
-    def register(self):
-        self.instance.register(self)
+        # Setup the event and it's callbacks
+        self.setup()
+    
+    def setup(self):
+        pass
