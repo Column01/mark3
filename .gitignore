@@ -1,1 +1,3 @@
 ﻿*.code-workspace
+test
+**/__pycache__
