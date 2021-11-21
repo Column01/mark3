@@ -1,4 +1,4 @@
-from services.service import Service
+from plugins.plugin import Plugin
 from asyncio import SubprocessProtocol, transports
 
 import collections
@@ -29,7 +29,7 @@ class ProcessProtocol(SubprocessProtocol):
         self.transport.write(data)
 
 
-class Process(Service):
-    """ The service to actually start the server process """
+class Process(Plugin):
+    """ The plugin that starts the server process """
     def __init__(self):
         pass

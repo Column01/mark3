@@ -1,4 +1,4 @@
-class Service:
+class Plugin:
     def __init__(self, event_registry):
         # Reference to the event registry
         self.event_registry = event_registry

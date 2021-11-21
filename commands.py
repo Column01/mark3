@@ -4,8 +4,8 @@ import asyncio
 from manager import Manager
 
 class BaseCommand:
-    def __init__(self) -> None:
-        self.servers = []
+    def __init__(self):
+        pass
 
     def execute(self, *args, **kwargs):
         pass
@@ -28,7 +28,7 @@ class StartCommand(BaseCommand):
             sys.exit(0)
         else:
             exit(f"Invalid server path: {server_path}")
-    
+
     def daemonize(self):
         if os.fork() > 0:
             # Parent process, we just wanna exit
