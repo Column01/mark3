@@ -28,11 +28,11 @@ class StartCommand(BaseCommand):
                     f.write(f"{os.getpid()}\n")
                 # Start an asyncio event loop
                 loop = asyncio.get_event_loop()
-                # Create an instance of the manager
+                # Create an instance of the manager and call it's start method in the event loop
                 manager = Manager(self.shared_path, self.server_name, self.server_path)
                 _ = loop.call_soon(manager.start)
-                
-                # Blocking call interrupted by loop.stop()
+
+                # Start the event loop
                 try:
                     loop.run_forever()
                 finally:
