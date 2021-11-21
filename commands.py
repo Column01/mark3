@@ -1,7 +1,10 @@
+import asyncio
+import glob
 import os
 import sys
-import asyncio
+
 from manager import Manager
+
 
 class BaseCommand:
     """ Base command class """
@@ -19,8 +22,9 @@ class StartCommand(BaseCommand):
         self.server_path = server_path
         self.shared_path = "test/"
         # Verify it's actually a directory
-        valid_path = self.verify_server_path()
+        valid_path = self.get_server_path()
         if valid_path:
+
             # Daemonize the process
             if self.daemonize():
                 # Get the PID of the forked process and save it to a file
@@ -29,7 +33,7 @@ class StartCommand(BaseCommand):
                 # Start an asyncio event loop
                 loop = asyncio.get_event_loop()
                 # Create an instance of the manager and call it's start method in the event loop
-                manager = Manager(self.shared_path, self.server_name, self.server_path)
+                manager = Manager(self.shared_path, self.server_name, self.server_path, self.sock_path, self.log_path)
                 loop.call_soon(manager.start)
 
                 # Start the event loop
@@ -59,10 +63,17 @@ class StartCommand(BaseCommand):
                 pass
         return True
 
-    def verify_server_path(self):
+    def get_server_path(self):
         if os.path.isdir(self.server_path):
             if self.server_path == ".":
                 self.server_name = os.path.basename(os.getcwd())
+                self.log_path = os.path.join(self.shared_path, f"{self.server_name}.txt")
+                self.sock_path = os.path.join(self.shared_path, f"{self.server_name}.sock")
+
+                if os.path.exists(self.log_path):
+                    os.remove(self.log_path)
+                if os.path.exists(self.sock_path):
+                    os.remove(self.sock_path)
             else:
                 self.server_name = os.path.basename(self.server_path)
             return True
