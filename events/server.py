@@ -6,3 +6,4 @@ class ServerStart(Event):
     def __init__(self, server_name: str, server_path: str):
         self.server_name = server_name
         self.server_path = server_path
+        super().__init__()

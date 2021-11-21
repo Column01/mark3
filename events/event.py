@@ -7,10 +7,13 @@ if TYPE_CHECKING:
 
 class Event:
     """ Base Event Class """
+    def __init__(self):
+        self.cancelled = False
+
     async def cancel(self):
         """ Cancels the event """
         self.cancelled = True
-    
+
     async def is_cancelled(self):
         """ Gets if the event was cancelled """
         return self.cancelled

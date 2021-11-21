@@ -35,4 +35,4 @@ class Manager:
         
         logging.info("Triggering the start event")
         # Trigger the server start in the process service
-        await self.event_registry.dispatch(ServerStart(self.server_name))
+        await self.event_registry.dispatch(ServerStart(self.server_name, self.server_path))
