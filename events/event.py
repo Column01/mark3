@@ -1,6 +1,8 @@
-from typing import Coroutine, Type
+import logging
+from typing import TYPE_CHECKING, Coroutine, Type
 
-from plugins.plugin import Plugin
+if TYPE_CHECKING:
+    from plugins.plugin import Plugin
 
 
 class Event:
@@ -13,48 +15,55 @@ class Event:
         """ Gets if the event was cancelled """
         return self.cancelled
 
-# Typing stuff
-EventClass = Type[Event]
-
 
 class EventRegistry:
     """ Event Registry Class, used for registering and dispatching all events """
     def __init__(self):
         self.event_listeners = {}
 
-    def register(self, event: EventClass, plugin: Plugin, callback: Coroutine):
+    def register(self, event: Type[Event], plugin: "Plugin", callback: Coroutine):
         """Register a coroutine to handle an event
 
         Args:
-            event (EventClass): The event you want to handle
+            event (EventClass): The class of event you want to handle
             plugin (Plugin): An instance of the plugin that's handling it
             callback (Coroutine): The coroutine that will be used to handle the event
         """
-        if self.event_listeners.get(event) is None:
-            self.event_listeners[event] = []
-        self.event_listeners[event].append((plugin, callback))
+        logging.info(event)
+        event_name = event.__name__
+        logging.info(f"Registering event handler for: {event_name} in plugin: {plugin.__class__.__name__}")
+        if self.event_listeners.get(event_name) is None:
+            self.event_listeners[event_name] = []
+        self.event_listeners[event_name].append((plugin, callback))
+        logging.info(f"CURRENT EVENT LISTENERS: {self.event_listeners}")
 
-    def unregister(self, event: EventClass, plugin: Plugin, callback: Coroutine):
+    def unregister(self, event: Type[Event], plugin: "Plugin", callback: Coroutine):
         """Un-registers the coroutine for handling the event
 
         Args:
-            event (EventClass): The event for the listener you want to unregister
+            event (EventClass): The class of event for the listener you want to unregister
             plugin (Plugin): An instance of the plugin that was handling it
             callback (Coroutine): The coroutine that used to handle the event
         """
-        if self.event_listeners.get(event) is not None:
-            self.event_listeners[event].remove((plugin, callback))
+        logging.info(event)
+        event_name = event.__name__
+        if self.event_listeners.get(event_name) is not None:
+            self.event_listeners[event_name].remove((plugin, callback))
 
-    async def dispatch(self, event: EventClass):
+    async def dispatch(self, event: Event):
         """Dispatches an event
 
         Args:
-            event (EventClass): An instance of the event you want to dispatch
+            event (Event): An instance of the event you want to dispatch
         """
+        event_name = type(event).__name__
+        logging.info(f"Dispatching event: {event_name}")
         # Copy the event listeners to avoid mutation
         _event_listeners = self.event_listeners.copy()
         # Get all listeners for that event
-        listeners = _event_listeners.get(event)
+        listeners = _event_listeners.get(event_name)
+        logging.info(f"Copied event listeners: {_event_listeners}")
+        logging.info(f"Listeners for event: {listeners}")
         if listeners is not None:
             # Dispatch the event to the callback
             for _, callback in listeners:
@@ -62,3 +71,5 @@ class EventRegistry:
                 # If the callback cancels the event, stop dispatching
                 if await event.is_cancelled():
                     break
+        else:
+            logging.info("No listeners found for event or something is wrong")

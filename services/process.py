@@ -1,7 +1,9 @@
-from plugins.plugin import Plugin
+import collections
+import logging
 from asyncio import SubprocessProtocol, transports
 
-import collections
+from events.server import ServerStart
+from plugins.plugin import Plugin
 
 
 class ProcessProtocol(SubprocessProtocol):
@@ -12,11 +14,11 @@ class ProcessProtocol(SubprocessProtocol):
         # Scrollback buffer
         self.scrollback_buffer = collections.deque(maxlen=1000)
 
-    def connection_made(self, transport: transports.BaseTransport) -> None:
+    def connection_made(self, transport: transports.BaseTransport):
         print("Connection with process established")
         self.transport = transport
 
-    def pipe_data_received(self, fd: int, data: bytes) -> None:
+    def pipe_data_received(self, fd: int, data: bytes):
         # Decode the data from the process and store it
         message = data.decode()
         self.scrollback_buffer.append(message)
@@ -31,5 +33,9 @@ class ProcessProtocol(SubprocessProtocol):
 
 class Process(Plugin):
     """ The plugin that starts the server process """
-    def __init__(self):
-        pass
+    async def setup(self):
+        self.register(ServerStart, self, self.start_server)
+    
+    async def start_server(self, event: ServerStart):
+        logging.info(f"SERVER START EVENT FROM EVENT LOOP! Server name from event: {event.server_name}")
+        self.loop.close()

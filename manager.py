@@ -1,4 +1,9 @@
-import os
+import asyncio
+import logging
+
+from events.event import EventRegistry
+from events.server import ServerStart
+from services.process import Process
 
 
 class Manager:
@@ -12,10 +17,22 @@ class Manager:
         self.sock_path = sock_path
         # Log path
         self.log_path = log_path
+
+        self.event_registry = None
     
-    def start(self):
+    async def start(self):
         """ Initializes services plugins and then starts the server """
-        with open(self.log_path, "w+") as fp:
-            fp.write("Process forked and started the manager successfully!\n")
-            fp.write(f"Socket path: {self.sock_path}, PID: {os.getpid()}\n")
-            fp.close()
+        logging.info("Starting the manager")
+        # Create the event registry object
+        self.event_registry = EventRegistry()
+
+        self.loop = asyncio.get_event_loop()
+
+        # Start the process service
+        process = Process(self.event_registry, self.loop)
+        await process.setup()
+        """ REGISTER OTHER SERVICES AND PLUGINS HERE """
+        
+        logging.info("Triggering the start event")
+        # Trigger the server start in the process service
+        await self.event_registry.dispatch(ServerStart(self.server_name))
