@@ -61,7 +61,10 @@ class StartCommand(BaseCommand):
 
     def verify_server_path(self):
         if os.path.isdir(self.server_path):
-            self.server_name = os.path.basename(self.server_path)
+            if self.server_path == ".":
+                self.server_name = os.path.basename(os.getcwd())
+            else:
+                self.server_name = os.path.basename(self.server_path)
             return True
         else:
             return False
