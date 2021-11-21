@@ -30,7 +30,7 @@ class StartCommand(BaseCommand):
                 loop = asyncio.get_event_loop()
                 # Create an instance of the manager and call it's start method in the event loop
                 manager = Manager(self.shared_path, self.server_name, self.server_path)
-                _ = loop.call_soon(manager.start)
+                loop.call_soon(manager.start)
 
                 # Start the event loop
                 try:
