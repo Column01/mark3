@@ -30,7 +30,7 @@ class StartCommand(BaseCommand):
                 # Get the PID of the forked process and save it to a file
                 with open(os.path.join(self.shared_path, f"{self.server_name}.pid"), 'w') as f:
                     f.write(f"{os.getpid()}\n")
-                # Start an asyncio event loop
+                # Get an asyncio event loop
                 loop = asyncio.get_event_loop()
                 # Create an instance of the manager and call it's start method in the event loop
                 manager = Manager(self.shared_path, self.server_name, self.server_path, self.sock_path, self.log_path)

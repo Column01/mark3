@@ -29,13 +29,11 @@ class EventRegistry:
             plugin (Plugin): An instance of the plugin that's handling it
             callback (Coroutine): The coroutine that will be used to handle the event
         """
-        logging.info(event)
         event_name = event.__name__
-        logging.info(f"Registering event handler for: {event_name} in plugin: {plugin.__class__.__name__}")
+        logging.info(f"Registering {event_name} handler for plugin: {plugin.__class__.__name__}")
         if self.event_listeners.get(event_name) is None:
             self.event_listeners[event_name] = []
         self.event_listeners[event_name].append((plugin, callback))
-        logging.info(f"CURRENT EVENT LISTENERS: {self.event_listeners}")
 
     def unregister(self, event: Type[Event], plugin: "Plugin", callback: Coroutine):
         """Un-registers the coroutine for handling the event
@@ -45,8 +43,8 @@ class EventRegistry:
             plugin (Plugin): An instance of the plugin that was handling it
             callback (Coroutine): The coroutine that used to handle the event
         """
-        logging.info(event)
         event_name = event.__name__
+        logging.info(f"Un-registering {event_name} handler for plugin: {plugin.__class__.__name__}")
         if self.event_listeners.get(event_name) is not None:
             self.event_listeners[event_name].remove((plugin, callback))
 
@@ -62,8 +60,6 @@ class EventRegistry:
         _event_listeners = self.event_listeners.copy()
         # Get all listeners for that event
         listeners = _event_listeners.get(event_name)
-        logging.info(f"Copied event listeners: {_event_listeners}")
-        logging.info(f"Listeners for event: {listeners}")
         if listeners is not None:
             # Dispatch the event to the callback
             for _, callback in listeners:
@@ -71,5 +67,3 @@ class EventRegistry:
                 # If the callback cancels the event, stop dispatching
                 if await event.is_cancelled():
                     break
-        else:
-            logging.info("No listeners found for event or something is wrong")

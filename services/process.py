@@ -35,7 +35,7 @@ class Process(Plugin):
     """ The plugin that starts the server process """
     async def setup(self):
         self.register(ServerStart, self, self.start_server)
-    
+
     async def start_server(self, event: ServerStart):
         logging.info(f"SERVER START EVENT FROM EVENT LOOP! Server name from event: {event.server_name}")
-        self.loop.close()
+        self.loop.stop()
