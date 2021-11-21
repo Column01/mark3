@@ -4,6 +4,8 @@ A modern Minecraft server wrapper written in python3 with asyncio
 
 ## TODO
 
+**Note:** The order of the following checklist doesn't necessarily mean it will be completed in that order!
+
 - [x] Daemonize Process
 - [x] Basic asyncio event system
 - [ ] Event priorities
