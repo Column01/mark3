@@ -1,4 +1,5 @@
 from typing import Union
+
 from events.event import Event
 
 

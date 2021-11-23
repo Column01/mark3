@@ -8,11 +8,13 @@ A modern Minecraft server wrapper written in python3 with asyncio
 
 - [x] Daemonize Process
 - [x] Basic asyncio event system
-- [ ] Event priorities
+- [x] Event priorities
+- [ ] Regex function triggers for server output (Console event? idk what to call it)
 - [ ] Gather config from server directory
 - [ ] Build java command from config info
-- [ ] Start server process and create a UNIX socket server to handle requests from clients
-- [ ] Flesh out more events (ServerOutput, ServerInput)
+- [x] Start a server process
+- [ ] Create a UNIX socket server to handle requests from clients
+- [x] Flesh out more server events (ServerOutput, ServerInput)
 - [ ] Trigger other events from console output
 - [ ] Basic user client (No command input?)
 - [ ] Document events and code structure

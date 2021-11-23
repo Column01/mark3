@@ -23,10 +23,12 @@ class Manager:
     async def start(self):
         """ Initializes services plugins and then starts the server """
         logging.info("Starting the manager")
-        # Create the event registry object
-        self.event_registry = EventRegistry()
-
+        
+        # Get the event loop
         self.loop = asyncio.get_event_loop()
+
+        # Create the event registry object
+        self.event_registry = EventRegistry(self.loop)
 
         # Start the process service
         process = Process(self.event_registry, self.loop)

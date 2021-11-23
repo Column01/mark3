@@ -5,7 +5,9 @@ import typing
 from asyncio import SubprocessProtocol, transports
 from asyncio.events import AbstractEventLoop
 
-from events.server import ServerOutput, ServerStart, ServerStopped
+from events.event import EventPriority
+from events.server import (ServerOutput, ServerStart, ServerStarting,
+                           ServerStopped)
 from plugins.plugin import Plugin
 
 if typing.TYPE_CHECKING:
@@ -42,7 +44,7 @@ class ProcessProtocol(SubprocessProtocol):
         # Check if the output was on the server STDOUT
         if fd == 1:
             # Dispatch the server output event to the event bus
-            self.loop.create_task(self.event_registry.dispatch(ServerOutput(message)))
+            self.event_registry.dispatch_synchronous(ServerOutput(message))
 
     def process_exited(self):
         code = self.transport.get_returncode()
@@ -62,16 +64,19 @@ class ProcessProtocol(SubprocessProtocol):
 class Process(Plugin):
     """ The plugin that starts the server process """
     async def setup(self):
-        self.register(ServerStart, self, self.start_server)
-        self.register(ServerOutput, self, self.server_output)
-        self.register(ServerStopped, self, self.server_stopped)
+        self.register(ServerStart, self, self.start_server, EventPriority.MONITOR)
+        self.register(ServerOutput, self, self.server_output, EventPriority.MONITOR)
+        self.register(ServerStopped, self, self.server_stopped, EventPriority.MONITOR)
 
     async def start_server(self, event: ServerStart):
         logging.info(f"SERVER START EVENT FROM EVENT LOOP! Server name from event: {event.server_name}")
 
         # Build the process protocol
         self.protocol = ProcessProtocol(self.proc_closed, self.event_registry, self.loop)
-        # Connect to the server process
+
+        # TODO: Gather info to build java command and arguments for server
+
+        # Start server process and connect our custom protocol to it
         self._transport, self._protocol = await self.loop.subprocess_exec(
             lambda: self.protocol, 
             "python3",
@@ -81,7 +86,8 @@ class Process(Plugin):
             stderr=asyncio.subprocess.PIPE
         )
 
-        logging.info("Process started... Reading some data from the process")
+        await self.event_registry.dispatch(ServerStarting())
+        # TODO: Console output tracking to wait until the server is fully started and then send a `ServerStarted` event
 
     async def server_output(self, event: ServerOutput):
         line = event.line

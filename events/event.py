@@ -1,8 +1,30 @@
+import enum
 import logging
+from asyncio.events import AbstractEventLoop
 from typing import TYPE_CHECKING, Coroutine, Type
 
 if TYPE_CHECKING:
     from plugins.plugin import Plugin
+
+
+class EventPriority(enum.Enum):
+    """ The event priority used for dispatching events, lower number == higher priority """
+    MONITOR = 0
+    HIGH = 1
+    MEDIUM = 2
+    LOW = 3
+
+    def __eq__(self, other):
+        """ Check if we are equal to the other priority """
+        return self.value == other.value if self.__class__ is other.__class__ else False
+
+    def __lt__(self, other):
+        """ Check if we are lesser than the other """
+        return self.value < other.value if self.__class__ is other.__class__ else False
+    
+    def __gt__(self, other):
+        """ Check if we are greater than the other """
+        return self.value > other.value if self.__class__ is other.__class__ else False
 
 
 class Event:
@@ -21,10 +43,11 @@ class Event:
 
 class EventRegistry:
     """ Event Registry Class, used for registering and dispatching all events """
-    def __init__(self):
+    def __init__(self, loop: AbstractEventLoop):
+        self.loop = loop
         self.event_listeners = {}
 
-    def register(self, event: Type[Event], plugin: "Plugin", callback: Coroutine):
+    def register(self, event: Type[Event], plugin: "Plugin", callback: Coroutine, priority: EventPriority):
         """Register a coroutine to handle an event
 
         Args:
@@ -36,9 +59,9 @@ class EventRegistry:
         logging.info(f"Registering {event_name} handler for plugin: {plugin.__class__.__name__}")
         if self.event_listeners.get(event_name) is None:
             self.event_listeners[event_name] = []
-        self.event_listeners[event_name].append((plugin, callback))
+        self.event_listeners[event_name].append((priority, plugin, callback))
 
-    def unregister(self, event: Type[Event], plugin: "Plugin", callback: Coroutine):
+    def unregister(self, event: Type[Event], plugin: "Plugin", callback: Coroutine, priority: EventPriority):
         """Un-registers the coroutine for handling the event
 
         Args:
@@ -49,7 +72,7 @@ class EventRegistry:
         event_name = event.__name__
         logging.info(f"Un-registering {event_name} handler for plugin: {plugin.__class__.__name__}")
         if self.event_listeners.get(event_name) is not None:
-            self.event_listeners[event_name].remove((plugin, callback))
+            self.event_listeners[event_name].remove((priority, plugin, callback))
 
     async def dispatch(self, event: Event):
         """Dispatches an event
@@ -59,14 +82,23 @@ class EventRegistry:
         """
         event_name = type(event).__name__
         logging.info(f"Dispatching event: {event_name}")
-        # Copy the event listeners to avoid mutation
+        # Copy the event listeners to avoid errors if an event gets registered while we are iterating
         _event_listeners = self.event_listeners.copy()
-        # Get all listeners for that event
-        listeners = _event_listeners.get(event_name)
-        if listeners is not None:
+        # Get all listeners for that event sorted by priority
+        listeners = sorted(_event_listeners.get(event_name) or [], key=lambda y: y[0])
+
+        if len(listeners) > 0:
             # Dispatch the event to the callback
-            for _, callback in listeners:
+            for _, _, callback in listeners:
                 await callback(event)
                 # If the callback cancels the event, stop dispatching
                 if await event.is_cancelled():
                     break
+
+    def dispatch_synchronous(self, event: Event):
+        """Dispatches an event from synchronous code
+
+        Args:
+            event (Event): An instance of the event you want to dispatch
+        """
+        self.loop.create_task(self.dispatch(event))
