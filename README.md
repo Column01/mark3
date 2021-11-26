@@ -2,7 +2,23 @@
 
 A modern Minecraft server wrapper written in python3 with asyncio
 
-## TODO
+## Support the development
+
+If you'd like to support the development of mark3, you can send me a donation through paypal or some cryptocurrencies. See the info below
+
+**DISCLAIMER**: All donations are just that, donations. There are no guaranteed perks for donating (yet?) and all it does is help motivate me to work on this more! I appreciate anything you can spare if you'd like to see this project finished!
+
+### Paypal
+
+To send me money on Paypal, you can use my email: `ColinAndress999@gmail.com`
+
+### Crypto
+
+- BTC `18KcFvh74iXLFBHQFBKqEWXHiGJVoMa3kp`
+- LTC `18KcFvh74iXLFBHQFBKqEWXHiGJVoMa3kp`
+- BAT `0xc12d753361744350280b6eA532f35965e776be5B` OR you can go to my profile and use a brave creator tip
+
+## Todo List
 
 **Note:** The order of the following checklist doesn't necessarily mean it will be completed in that order!
 
