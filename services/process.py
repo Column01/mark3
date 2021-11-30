@@ -3,7 +3,6 @@ import collections
 import logging
 import typing
 from asyncio import SubprocessProtocol, transports
-from asyncio.events import AbstractEventLoop
 
 from events.event import EventPriority
 from events.server import (ServerOutput, ServerStart, ServerStarting,
@@ -16,15 +15,14 @@ if typing.TYPE_CHECKING:
 
 class ProcessProtocol(SubprocessProtocol):
     """ Process Protocol that handles server process I/O """
-    def __init__(self, exit_future: typing.Coroutine, event_registry: "EventRegistry", loop: AbstractEventLoop):
+    def __init__(self, exit_future: typing.Coroutine, event_registry: "EventRegistry"):
         # Exit future
         self.exit_future = exit_future
 
-        # Running event loop
-        self.loop = loop
-
         # Reference to the event registry
         self.event_registry = event_registry
+        # Running event loop
+        self.loop = self.event_registry.loop
 
         self.scrollback_buffer = collections.deque(maxlen=1000)
 
@@ -72,7 +70,7 @@ class Process(Plugin):
         logging.info(f"SERVER START EVENT FROM EVENT LOOP! Server name from event: {event.server_name}")
 
         # Build the process protocol
-        self.protocol = ProcessProtocol(self.proc_closed, self.event_registry, self.loop)
+        self.protocol = ProcessProtocol(self.proc_closed, self.event_registry)
 
         # TODO: Gather info to build java command and arguments for server
 
