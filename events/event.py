@@ -50,11 +50,7 @@ class EventFilter:
         """
         logging.info(f"Event field name: {self.event_field_name} Regex pattern: {self.pattern}")
         event_field = getattr(event, self.event_field_name)
-        match = re.search(self.pattern, event_field)
-        if match is None:
-            match = False
-        else:
-            match = True
+        match = False if re.search(self.pattern, event_field) is None else True
         logging.info(f"Contents of event field: {event_field}. Match? {match}")
 
         return match
