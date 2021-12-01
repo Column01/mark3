@@ -46,9 +46,8 @@ class EventFilter:
             event (Event): The event instance to check against the filter
 
         Returns:
-            match (bool): Whether the event should eb dispatched to the listener
+            match (bool): Whether the event should be dispatched to the listener
         """
-
         logging.info(f"Event field name: {self.event_field_name} Regex pattern: {self.pattern}")
         event_field = getattr(event, self.event_field_name)
         match = re.search(self.pattern, event_field)
