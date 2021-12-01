@@ -1,5 +1,6 @@
 import enum
 import logging
+import re
 from asyncio.events import AbstractEventLoop
 from typing import TYPE_CHECKING, Coroutine, Type
 
@@ -27,6 +28,39 @@ class EventPriority(enum.Enum):
         return self.value > other.value if self.__class__ is other.__class__ else False
 
 
+class EventFilter:
+    """ Used by when registering an event handler to filter for event contents """
+    def __init__(self, pattern: str, event_field_name: str):
+        """Creates the filter object for filtering an event
+
+        Args:
+            filters (List[Tuple[str, str]]): A list of tuples where the first tuple item is event field and the second is a regex pattern to match
+        """
+        self.pattern = pattern
+        self.event_field_name = event_field_name
+
+    def check(self, event: "Event"):
+        """Checks the event against the stored filter to see if it should be dispatched to the listener
+
+        Args:
+            event (Event): The event instance to check against the filter
+
+        Returns:
+            match (bool): Whether the event should eb dispatched to the listener
+        """
+
+        logging.info(f"Event field name: {self.event_field_name} Regex pattern: {self.pattern}")
+        event_field = getattr(event, self.event_field_name)
+        match = re.search(self.pattern, event_field)
+        if match is None:
+            match = False
+        else:
+            match = True
+        logging.info(f"Contents of event field: {event_field}. Match? {match}")
+
+        return match
+
+
 class Event:
     """ Base Event Class """
     def __init__(self):
@@ -47,32 +81,34 @@ class EventRegistry:
         self.loop = loop
         self.event_listeners = {}
 
-    def register(self, event: Type[Event], plugin: "Plugin", callback: Coroutine, priority: EventPriority):
+    def register(self, event: Type[Event], plugin: "Plugin", callback: Coroutine, priority: EventPriority, event_filter: EventFilter = None):
         """Register a coroutine to handle an event
 
         Args:
             event (EventClass): The class of event you want to handle
             plugin (Plugin): An instance of the plugin that's handling it
             callback (Coroutine): The coroutine that will be used to handle the event
+            event_filter (EventFilter, optional): An instance of an event filter
         """
         event_name = event.__name__
         logging.info(f"Registering {event_name} handler for plugin: {plugin.__class__.__name__}")
         if self.event_listeners.get(event_name) is None:
             self.event_listeners[event_name] = []
-        self.event_listeners[event_name].append((priority, plugin, callback))
+        self.event_listeners[event_name].append((priority, plugin, callback, event_filter))
 
-    def unregister(self, event: Type[Event], plugin: "Plugin", callback: Coroutine, priority: EventPriority):
+    def unregister(self, event: Type[Event], plugin: "Plugin", callback: Coroutine, priority: EventPriority, event_filter: EventFilter = None):
         """Un-registers the coroutine for handling the event
 
         Args:
             event (EventClass): The class of event for the listener you want to unregister
             plugin (Plugin): An instance of the plugin that was handling it
             callback (Coroutine): The coroutine that used to handle the event
+            event_filter (EventFilter, optional): An instance of an event filter
         """
         event_name = event.__name__
         logging.info(f"Un-registering {event_name} handler for plugin: {plugin.__class__.__name__}")
         if self.event_listeners.get(event_name) is not None:
-            self.event_listeners[event_name].remove((priority, plugin, callback))
+            self.event_listeners[event_name].remove((priority, plugin, callback, event_filter))
 
     async def dispatch(self, event: Event):
         """Dispatches an event
@@ -89,11 +125,14 @@ class EventRegistry:
 
         if len(listeners) > 0:
             # Dispatch the event to the callback
-            for _, _, callback in listeners:
-                await callback(event)
-                # If the callback cancels the event, stop dispatching
-                if await event.is_cancelled():
-                    break
+            for _, _, callback, event_filter in listeners:
+                # Check if listener provided a filter and if so, check the filter
+                if event_filter is None or event_filter.check(event):
+                    # Trigger the callback
+                    await callback(event)
+                    # If the callback cancels the event, stop dispatching it
+                    if await event.is_cancelled():
+                        break
 
     def dispatch_synchronous(self, event: Event):
         """Dispatches an event from synchronous code

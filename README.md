@@ -25,7 +25,7 @@ To send me money on Paypal, you can use my email: `ColinAndress999@gmail.com`
 - [x] Daemonize Process
 - [x] Basic asyncio event system
 - [x] Event priorities
-- [ ] Regex function triggers for server output (Console event? idk what to call it)
+- [x] Regex triggers for events
 - [ ] Gather config from server directory
 - [ ] Build java command from config info
 - [x] Start a server process

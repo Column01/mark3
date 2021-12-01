@@ -4,7 +4,7 @@ import logging
 import typing
 from asyncio import SubprocessProtocol, transports
 
-from events.event import EventPriority
+from events.event import EventFilter, EventPriority
 from events.server import (ServerOutput, ServerStart, ServerStarting,
                            ServerStopped)
 from plugins.plugin import Plugin
@@ -63,7 +63,7 @@ class Process(Plugin):
     """ The plugin that starts the server process """
     async def setup(self):
         self.register(ServerStart, self, self.start_server, EventPriority.MONITOR)
-        self.register(ServerOutput, self, self.server_output, EventPriority.MONITOR)
+        self.register(ServerOutput, self, self.server_output, EventPriority.MONITOR, event_filter=EventFilter("test", "line"))
         self.register(ServerStopped, self, self.server_stopped, EventPriority.MONITOR)
 
     async def start_server(self, event: ServerStart):
@@ -73,7 +73,6 @@ class Process(Plugin):
         self.protocol = ProcessProtocol(self.proc_closed, self.event_registry)
 
         # TODO: Gather info to build java command and arguments for server
-
         # Start server process and connect our custom protocol to it
         self._transport, self._protocol = await self.loop.subprocess_exec(
             lambda: self.protocol, 
