@@ -63,7 +63,7 @@ class Process(Plugin):
     """ The plugin that starts the server process """
     async def setup(self):
         self.register(ServerStart, self, self.start_server, EventPriority.MONITOR)
-        self.register(ServerOutput, self, self.server_output, EventPriority.MONITOR, event_filter=EventFilter("test", "line"))
+        self.register(ServerOutput, self, self.server_output, EventPriority.MONITOR)
         self.register(ServerStopped, self, self.server_stopped, EventPriority.MONITOR)
 
     async def start_server(self, event: ServerStart):
