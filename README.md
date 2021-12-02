@@ -26,8 +26,8 @@ To send me money on Paypal, you can use my email: `ColinAndress999@gmail.com`
 - [x] Basic asyncio event system
 - [x] Event priorities
 - [x] Regex triggers for events
-- [ ] Gather config from server directory
-- [ ] Build java command from config info
+- [x] Gather config from server directory
+- [x] Build java command from config info
 - [x] Start a server process
 - [ ] Create a UNIX socket server to handle requests from clients
 - [x] Flesh out more server events (ServerOutput, ServerInput)
