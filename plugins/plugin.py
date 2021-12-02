@@ -12,6 +12,7 @@ class Plugin:
         self.event_registry = event_registry
         # Reference to register an event callback
         self.register = self.event_registry.register
+        self.unregister = self.event_registry.unregister
 
         # Reference to the event loop
         self.loop = loop

@@ -101,6 +101,7 @@ class EventRegistry:
             callback (Coroutine): The coroutine that used to handle the event
             event_filter (EventFilter, optional): An instance of an event filter
         """
+        # TODO: FIX! Doesn't work properly... crashes program when called
         event_name = event.__name__
         logging.info(f"Un-registering {event_name} handler for plugin: {plugin.__class__.__name__}")
         if self.event_listeners.get(event_name) is not None:

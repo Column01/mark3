@@ -7,7 +7,7 @@ from asyncio import SubprocessProtocol, transports
 from config import Mark2Config
 
 from events.event import EventFilter, EventPriority
-from events.server import (ServerInput, ServerOutput, ServerStart, ServerStarting,
+from events.server import (ServerInput, ServerOutput, ServerStart, ServerStarted, ServerStarting,
                            ServerStopped)
 from plugins.plugin import Plugin
 
@@ -65,9 +65,11 @@ class Process(Plugin):
     """ The plugin that starts the server process """
     async def setup(self):
         self.register(ServerStart, self, self.start_server, EventPriority.MONITOR)
-        self.register(ServerOutput, self, self.server_output, EventPriority.MONITOR)
         self.register(ServerInput, self, self.server_input, EventPriority.MONITOR)
         self.register(ServerStopped, self, self.server_stopped, EventPriority.MONITOR)
+        self.register(ServerStarted, self, self.server_started, EventPriority.MONITOR)
+
+        self.register(ServerOutput, self, self.done_handler, EventPriority.MONITOR, EventFilter(".*Done \(([0-9\.]+)s\)!.*", "line"))
 
     async def start_server(self, event: ServerStart):
         logging.info(f"SERVER START EVENT FROM EVENT LOOP! Server name from event: {event.server_name}")
@@ -119,17 +121,21 @@ class Process(Plugin):
         if mark2_section["server_args"] != "":
             java_cmd.append(mark2_section["server_args"])
         return java_cmd
-
-    async def server_output(self, event: ServerOutput):
-        line = event.line
-        logging.info(f"Line from server STDOUT: {line}")
+    
+    async def done_handler(self, event: ServerOutput):
+        await self.event_registry.dispatch(ServerStarted())
+        await self.unregister(ServerOutput, self, self.done_handler, EventFilter(".*Done \(([0-9\.]+)s\)!.*", "line"))
 
     async def server_input(self, event: ServerInput):
         if self.protocol:
             await self.protocol.write_process(event.data)
+            logging.info(f"Server input sent to STDIN: {event.data}")
 
     async def server_stopped(self, event: ServerStopped):
         logging.info(f"Server closed with reason: {event.reason}")
+    
+    async def server_started(self, event: ServerStarted):
+        logging.info("Server started!")
 
     async def proc_closed(self, exit_code):
         await self.event_registry.dispatch(ServerStopped(f"Process exited with code: {exit_code}"))
