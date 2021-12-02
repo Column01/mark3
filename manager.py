@@ -19,11 +19,11 @@ class Manager:
         self.log_path = log_path
 
         self.event_registry = None
-    
+
     async def start(self):
         """ Initializes services plugins and then starts the server """
         logging.info("Starting the manager")
-        
+
         # Get the event loop
         self.loop = asyncio.get_event_loop()
 
@@ -34,7 +34,7 @@ class Manager:
         process = Process(self.event_registry, self.loop)
         await process.setup()
         """ REGISTER OTHER SERVICES AND PLUGINS HERE """
-        
+
         logging.info("Triggering the start event")
         # Trigger the server start in the process service
         await self.event_registry.dispatch(ServerStart(self.server_name, self.server_path))

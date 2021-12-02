@@ -1,11 +1,13 @@
 import asyncio
 import collections
 import logging
+import os
 import typing
 from asyncio import SubprocessProtocol, transports
+from config import Mark2Config
 
 from events.event import EventFilter, EventPriority
-from events.server import (ServerOutput, ServerStart, ServerStarting,
+from events.server import (ServerInput, ServerOutput, ServerStart, ServerStarting,
                            ServerStopped)
 from plugins.plugin import Plugin
 
@@ -38,7 +40,7 @@ class ProcessProtocol(SubprocessProtocol):
     def pipe_data_received(self, fd: int, data: bytes):
         # Decode the data from the process and store it
         message = data.decode().strip()
-
+        logging.info(message)
         # Check if the output was on the server STDOUT
         if fd == 1:
             # Dispatch the server output event to the event bus
@@ -64,20 +66,32 @@ class Process(Plugin):
     async def setup(self):
         self.register(ServerStart, self, self.start_server, EventPriority.MONITOR)
         self.register(ServerOutput, self, self.server_output, EventPriority.MONITOR)
+        self.register(ServerInput, self, self.server_input, EventPriority.MONITOR)
         self.register(ServerStopped, self, self.server_stopped, EventPriority.MONITOR)
 
     async def start_server(self, event: ServerStart):
         logging.info(f"SERVER START EVENT FROM EVENT LOOP! Server name from event: {event.server_name}")
 
+        # Get server config
+        config_path = os.path.join(event.server_path, "mark3.json")
+        logging.info(config_path)
+        if os.path.isfile(config_path):
+            self.mark2_settings = Mark2Config(config_path)
+        else:
+            # TODO: NO SERVER CONFIG, USE DEFAULTS
+            raise FileNotFoundError("The server config file could not be found!")
+        
+        # Get the java command
+        java_cmd = await self.build_java_command()
         # Build the process protocol
         self.protocol = ProcessProtocol(self.proc_closed, self.event_registry)
-
-        # TODO: Gather info to build java command and arguments for server
+        
+        os.chdir(event.server_path)
+        logging.info(f"Starting server: {' '.join(java_cmd)}")
         # Start server process and connect our custom protocol to it
         self._transport, self._protocol = await self.loop.subprocess_exec(
-            lambda: self.protocol, 
-            "python3",
-            "test.py", 
+            lambda: self.protocol,
+            *java_cmd,
             stdin=asyncio.subprocess.PIPE, 
             stdout=asyncio.subprocess.PIPE, 
             stderr=asyncio.subprocess.PIPE
@@ -86,10 +100,33 @@ class Process(Plugin):
         await self.event_registry.dispatch(ServerStarting())
         # TODO: Console output tracking to wait until the server is fully started and then send a `ServerStarted` event
 
+    async def build_java_command(self):
+        """ Builds the java command from the mark2 settings loaded in start_server """
+        java_cmd = []
+        mark2_section = self.mark2_settings["mark2"]
+        # Add the java path
+        java_cmd.append(mark2_section["java_path"])
+        # Add java arguments
+        if mark2_section["java_args"] != "":
+            java_cmd.append(mark2_section["java_args"])
+
+        # Add -jar and jar path
+        java_cmd.append("-jar")
+        java_cmd.append(mark2_section["jar_path"])
+        # No GUI
+        java_cmd.append("nogui")
+
+        if mark2_section["server_args"] != "":
+            java_cmd.append(mark2_section["server_args"])
+        return java_cmd
+
     async def server_output(self, event: ServerOutput):
         line = event.line
         logging.info(f"Line from server STDOUT: {line}")
-        await self.protocol.write_process("say test")
+
+    async def server_input(self, event: ServerInput):
+        if self.protocol:
+            await self.protocol.write_process(event.data)
 
     async def server_stopped(self, event: ServerStopped):
         logging.info(f"Server closed with reason: {event.reason}")
