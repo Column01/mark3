@@ -10,7 +10,7 @@ If you'd like to support the development of mark3, you can send me a donation th
 
 ### Paypal
 
-To send me money on Paypal, you can use my email: `ColinAndress999@gmail.com`
+To send me money on Paypal, you can use my email: `Column01Dev@gmail.com`
 
 ### Crypto
 
